@@ -10,8 +10,8 @@
         - Reduce the precision of pixel values. For example, if a pixel's RGB value ranges from 0-255, reduce its precision by only allowing multiples of 4 or 8, leading to data compression but reduced quality.
     - Simple Run Length Encoding (RLE)
         - If there are consecutive pixels of the same color, store the color once followed by a count.
-- encoder.c
-    - Step-1: Quantization (using multiples of 4 for simplicity)
+- `encoder.c`
+    - **Step-1: Quantization (using multiples of 4 for simplicity)**
         - Quantization, in general, is the process of constraining or reducing the number of possible values in a dataset, typically to compress the data.
         - In the context of our rudimentary video encoder, the quantization process aims to simplify the color values to make them more amenable to compression.
         
@@ -41,3 +41,6 @@
         - Why is this useful?
             - By reducing the number of unique values (in this case, mapping every group of 4 values to a single representative value), we're simplifying the data. This simplification can make subsequent compression steps, like Run-Length Encoding (RLE), more effective because we're more likely to have longer runs of identical values.
             - However, it's important to understand that this type of quantization introduces a loss of information. The process is irreversible; once you've quantized the data, you can't get back the original values. In real-world video encoding, quantization is used in more sophisticated ways and is one of the steps that can lead to a loss of visual quality, especially if done aggressively.
+    
+    - **Step-2: Simple Run-Length Encoding**
+        - Run-Length Encoding (RLE) is a compression technique primarily suited for data with long sequences of repeated values. It's widely used in graphic file formats like BMP and TIFF due to its simplicity.
