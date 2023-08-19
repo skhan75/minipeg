@@ -9,4 +9,6 @@
 // The decoding will depend on the encoding_type and any associated parameters, like quantization_level.
 unsigned char *decode_video(EncodedVideoData *encoded_data, RawVideoConfig *config);
 
+unsigned char *perform_rle_decoding(RLE *encoded_data, int encoded_size, int *decoded_size);
+
 #endif // DECODER_H

@@ -89,7 +89,7 @@ EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVi
         // It's a pointer that points to the memory space where the encoded frames are being stored. 
         // On the first iteration (when no frames have been encoded yet), it might be NULL 
         // (or not pointing to allocated memory).
-        RLE* frame_encoded_data = realloc(all_encoded_data, (total_encoded_size + frame_size) * sizeof(RLE));
+        all_encoded_data = realloc(all_encoded_data, (total_encoded_size + frame_size) * sizeof(RLE));
         // Copying the New Encoded Data
         memcpy(all_encoded_data + total_encoded_size, frame_encoded_data, encoded_frame_size * sizeof(RLE));
 

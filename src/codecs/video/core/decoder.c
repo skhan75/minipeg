@@ -2,11 +2,6 @@
 #include <stdlib.h>
 #include <decoder.h>
 
-typedef struct {
-    unsigned char value;
-    int count;
-} RLE;
-
 // Dequantization function to restore pixel values from their quantized forms.
 // It undoes the effects of the quantization step done during encoding.
 void apply_dequantization(unsigned char *buffer, int buffer_size, int quantization_level) {
@@ -53,5 +48,5 @@ unsigned char *decode_video(EncodedVideoData *encoded_data, RawVideoConfig *conf
     
 
     apply_dequantization(decoded_buffer, decoded_size, encoded_data->quantization_level);
-    return decoded_buffer
+    return decoded_buffer;
 }
