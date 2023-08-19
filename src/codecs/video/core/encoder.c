@@ -90,6 +90,7 @@ EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVi
         // On the first iteration (when no frames have been encoded yet), it might be NULL 
         // (or not pointing to allocated memory).
         RLE* frame_encoded_data = realloc(all_encoded_data, (total_encoded_size + frame_size) * sizeof(RLE));
+        // Copying the New Encoded Data
         memcpy(all_encoded_data + total_encoded_size, frame_encoded_data, encoded_frame_size * sizeof(RLE));
 
         total_encoded_size += encoded_frame_size;
@@ -104,6 +105,7 @@ EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVi
     encoded_data->data = all_encoded_data;
     encoded_data->data_size = total_encoded_size;
     encoded_data->encoding_type = RLE_ENCODING;
-    
+    encoded_data->quantization_level = quantization_level;
+
     return encoded_data;
 }

@@ -18,9 +18,10 @@ typedef struct {
 } RLE;
 
 typedef struct {
-    void* data;         // Generic pointer to encoded data
-    int data_size;      // Size of the encoded data in terms of the data type (e.g., number of RLE structures)
-    int encoding_type;  // Identifier for the encoding type (e.g., RLE, another algorithm, etc.)
+    RLE *data;              // pointer to encoded data
+    int data_size;          // Size of the encoded data in terms of the data type (#RLE structures)
+    int encoding_type;      // Identifier for the encoding type (e.g., RLE for now, another algorithm, etc.)
+    int quantization_level; // Quantization level used during encoding
 } EncodedVideoData;
 
 /**
@@ -33,6 +34,6 @@ typedef struct {
  * @param quantization_level The level of quantization to apply (0 to 3).
  * @return Pointer to RLE encoded data. Caller is responsible for freeing this memory using free().
  */
-EncodedVideoData *encode_video(const unsigned char *raw_buffer, int buffer_size, const RawVideoConfig *config, int quantization_level);
+EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVideoConfig *config, int quantization_level);
 
 #endif // ENCODER_H
