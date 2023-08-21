@@ -6,6 +6,10 @@
 
 double DCT_MATRIX[BLOCK_SIZE][BLOCK_SIZE];
 
+// P.S This is a foundational DCT implementation. The real magic and complexity come with optimizations 
+// like fast cosine transforms, fixed-point arithmetic, SIMD instructions, and other hardware/software 
+// optimizations.
+
 // Initialize the DCT matrix
 static void initialize_dct_matrix() {
     double scaleFactor = sqrt(2.0 / BLOCK_SIZE);
@@ -35,6 +39,15 @@ void perform_dct(double block[BLOCK_SIZE][BLOCK_SIZE], double output[BLOCK_SIZE]
             for (int k = 0; k < BLOCK_SIZE; k++) {
                 output[i][j] += temp[i][k] * DCT_MATRIX[k][j];
             }
+        }
+    }
+}
+
+void quantize_dct_coefficients(double coefficients[BLOCK_SIZE][BLOCK_SIZE], int quantization_table[BLOCK_SIZE][BLOCK_SIZE]) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            coefficients[i][j] /= quantization_table[i][j];
+            coefficients[i][j] = round(coefficients[i][j]);
         }
     }
 }
