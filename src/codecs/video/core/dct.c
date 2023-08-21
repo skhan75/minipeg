@@ -15,9 +15,28 @@ DCTContext* init_dct(int block_size) {
 
     ctx->dct_matrix = malloc(block_size * sizeof(double*));
     ctx->dct_matrix_transpose = malloc(block_size * sizeof(double*));
+
+    // if memory allocation fails
+    if (!ctx->dct_matrix || !ctx->dct_matrix_transpose) {
+        free(ctx);
+        return NULL;
+    }
+
     for (int i = 0; i < block_size; i++) {
         ctx->dct_matrix[i] = malloc(block_size * sizeof(double));
         ctx->dct_matrix_transpose[i] = malloc(block_size * sizeof(double));
+        if (!ctx->dct_matrix[i] || !ctx->dct_matrix_transpose[i]) {
+            // Handle the memory allocation failure for these blocks here.
+            // One simple way is to free everything that has been allocated so far and then return NULL.
+            for (int j = 0; j <= i; j++) {
+                free(ctx->dct_matrix[j]);
+                free(ctx->dct_matrix_transpose[j]);
+            }
+            free(ctx->dct_matrix);
+            free(ctx->dct_matrix_transpose);
+            free(ctx);
+            return NULL;
+        }
     }
 
     double scaleFactor = sqrt(2.0 / block_size);
