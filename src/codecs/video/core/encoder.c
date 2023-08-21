@@ -1,4 +1,5 @@
 #include "encoder.h"
+#include "dct.h"
 #include <string.h>
 
 #define QUANTIZATION_LEVELS 4
@@ -53,17 +54,33 @@ RLE* perform_rle_encoding(unsigned char* buffer, int buffer_size, int* encoded_s
     return encoded_buffer;
 }
 
-EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVideoConfig *config, int quantization_level) {
+EncodedVideoData *encode_video(
+    unsigned char *raw_buffer, 
+    int buffer_size, 
+    RawVideoConfig *config, 
+    int quantization_level,
+    int block_size=0 // optional for dct block size
+) {
+    if(block_size == 0) block_size = DEFAULT_BLOCK_SIZE; // default block size
+
     // Initialize the quantization tables
     initialize_quantization_tables();
 
+    // Initialize DCT
+    DCTContext *dct_ctx = init_dct(block_size);
+    if (!dct_ctx) return NULL;
+
     // Number of bytes in a single frame
     int frame_size = config->width * config->height * config->bytes_per_pixel;
-
     // For simplicity, we're assuming the entire buffer is a perfect multiple of frame_size.
     // TODO - update later to handle cases where the buffer size is not a multiple of frame_size.
     // Maybe error handling or padding the buffer with zeros.
     int total_frames = buffer_size / frame_size;
+
+    // Assuming we're working with grayscale data for simplicity.
+    // For RGB, you'd need to handle each channel separately.
+    unsigned char frame_block[block_size][block_size];
+    double dct_output[block_size][block_size];
 
     // This is just one approach where we handle frame-by-frame encoding.
     // Each frame is independently RLE encoded and quantized.
@@ -74,27 +91,44 @@ EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVi
     // Iterate Over Each Frame for Encoding
     for(int i = 0; i < total_frames; i++) {
         // gets a pointer to the start of the current frame we're processing. 
-        // This frame will be encoded separately.
         size_t frame_offset = (size_t)i * frame_size;
         unsigned char *frame_buffer = raw_buffer + frame_offset;
 
         // Modify each pixel data in place, based on given quantization level
         apply_complex_quantization(frame_buffer, frame_size, quantization_level);
 
-        // We adjust the size of the overall encoded data buffer to accommodate the newly encoded frame. 
-        // Then, we copy the encoded frame data into the main buffer and update the size counter.
-        int encoded_frame_size;
-        RLE *frame_encoded_data = perform_rle_encoding(frame_buffer, frame_size, &encoded_frame_size);
+        for(int i=0; i<config->height; i+=block_size) {
+            for(int j=0; j<config->width; j+=block_size) {
+                // Extracting the block 
+                for(int bi=0; bi<block_size; bi++) {
+                    for(int bj=0; bj<block_size; bj++) {
+                        frame_block[bi][bj] = frame_buffer[(i+bi)*config->width + (j+bj)];
+                    }
+                }
+            }
 
-        // It's a pointer that points to the memory space where the encoded frames are being stored. 
-        // On the first iteration (when no frames have been encoded yet), it might be NULL 
-        // (or not pointing to allocated memory).
-        all_encoded_data = realloc(all_encoded_data, (total_encoded_size + frame_size) * sizeof(RLE));
-        // Copying the New Encoded Data
-        memcpy(all_encoded_data + total_encoded_size, frame_encoded_data, encoded_frame_size * sizeof(RLE));
+            // Perform DCT on the block
+            perform_dct(dct_ctx, frame_block, dct_output);
 
-        total_encoded_size += encoded_frame_size;
-        free(frame_encoded_data);
+            // Quantize the DCT coefficients (using a predefined quantization table)
+            int quantization_table[block_size][block_size]; // This needs to be defined, typically it's standard for JPEG compression
+            quantize_dct_coefficients(dct_output, quantization_table, block_size);
+
+            // We adjust the size of the overall encoded data buffer to accommodate the newly encoded frame.
+            // Then, we copy the encoded frame data into the main buffer and update the size counter.
+            int encoded_block_size;
+            RLE *block_encoded_data = perform_rle_encoding(frame_buffer, frame_size, &encoded_block_size);
+
+            // It's a pointer that points to the memory space where the encoded frames are being stored.
+            // On the first iteration (when no frames have been encoded yet), it might be NULL
+            // (or not pointing to allocated memory).
+            all_encoded_data = realloc(all_encoded_data, (total_encoded_size + frame_size) * sizeof(RLE));
+            // Copying the New Encoded Data
+            memcpy(all_encoded_data + total_encoded_size, block_encoded_data, encoded_block_size * sizeof(RLE));
+
+            total_encoded_size += encoded_block_size;
+            free(block_encoded_data);
+        }
     }
 
     EncodedVideoData* encoded_data = (EncodedVideoData*) malloc(sizeof(EncodedVideoData));

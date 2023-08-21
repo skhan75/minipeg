@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+// Default BLOCK_SIZE
+#define DEFAULT_BLOCK_SIZE 8
+
 // Define video configuration structure
 typedef struct {
     int width;
