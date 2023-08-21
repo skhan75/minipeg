@@ -114,22 +114,33 @@ EncodedVideoData *encode_video(
             int quantization_table[block_size][block_size]; // This needs to be defined, typically it's standard for JPEG compression
             quantize_dct_coefficients(dct_output, quantization_table, block_size);
 
+            // Flatten the 2D quantized DCT block to a 1D array
+            // The flattening of a 2D block to a 1D array isn't strictly necessary for
+            // the fundamental compression steps, but it is commonly done for Sequential Access
+            // Simplicity and compatibility with algorithms like RLE and Huffman Encoding.
+            unsigned char flattenedBlock[block_size * block_size];
+            for(int bi = 0; bi < block_size; bi++) {
+                for(int bj = 0; bj < block_size; bj++) {
+                    flattenedBlock[bi * block_size + bj] = (unsigned char)dct_output[bi][bj];
+                }
+            }
+
             // We adjust the size of the overall encoded data buffer to accommodate the newly encoded frame.
             // Then, we copy the encoded frame data into the main buffer and update the size counter.
             int encoded_block_size;
-            RLE *block_encoded_data = perform_rle_encoding(frame_buffer, frame_size, &encoded_block_size);
+            RLE *block_encoded_data = perform_rle_encoding(flattenedBlock, block_size * block_size, &encoded_block_size);
 
-            // It's a pointer that points to the memory space where the encoded frames are being stored.
-            // On the first iteration (when no frames have been encoded yet), it might be NULL
-            // (or not pointing to allocated memory).
-            all_encoded_data = realloc(all_encoded_data, (total_encoded_size + frame_size) * sizeof(RLE));
-            // Copying the New Encoded Data
+            // Resize the output buffer and copy the new RLE encoded block into it
+            all_encoded_data = realloc(all_encoded_data, (total_encoded_size + encoded_block_size) * sizeof(RLE));
             memcpy(all_encoded_data + total_encoded_size, block_encoded_data, encoded_block_size * sizeof(RLE));
 
             total_encoded_size += encoded_block_size;
             free(block_encoded_data);
         }
     }
+
+    // Cleanup the DCT context
+    free_dct(dct_ctx);
 
     EncodedVideoData* encoded_data = (EncodedVideoData*) malloc(sizeof(EncodedVideoData));
     if(!encoded_data) {

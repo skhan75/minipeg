@@ -37,6 +37,6 @@ typedef struct {
  * @param quantization_level The level of quantization to apply (0 to 3).
  * @return Pointer to RLE encoded data. Caller is responsible for freeing this memory using free().
  */
-EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVideoConfig *config, int quantization_level);
+EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVideoConfig *config, int quantization_level, int block_size);
 
 #endif // ENCODER_H
