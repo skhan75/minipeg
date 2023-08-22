@@ -67,15 +67,22 @@ RLE* perform_rle_encoding(unsigned char* buffer, int buffer_size, int* encoded_s
     return encoded_buffer;
 }
 
-EncodedVideoData *encode_video(
+EncodedVideoData *encode_video_with_default_block(
     unsigned char *raw_buffer, 
     int buffer_size, 
     RawVideoConfig *config, 
-    int quantization_level,
-    int block_size=0 // optional for dct block size
+    int quantization_level
 ) {
-    if(block_size == 0) block_size = DEFAULT_BLOCK_SIZE; // default block size
+    return encode_video(raw_buffer, buffer_size, config, quantization_level, DEFAULT_BLOCK_SIZE);
+}
 
+EncodedVideoData *encode_video(
+    unsigned char *raw_buffer,
+    int buffer_size,
+    RawVideoConfig *config,
+    int quantization_level,
+    int block_size
+) {
     // Initialize the quantization tables
     initialize_quantization_tables();
 
@@ -107,21 +114,23 @@ EncodedVideoData *encode_video(
         size_t frame_offset = (size_t)frame * frame_size;
         unsigned char *frame_buffer = raw_buffer + frame_offset;
 
-        // Conversion from RGB to YCBCr for the entire frame
-        for(int pixel_idx = 0; pixel_idx < frame_size; pixel_idx += config->bytes_per_pixel) {
-            unsigned char r = frame_buffer[pixel_idx];
-            unsigned char g = frame_buffer[pixel_idx + 1];
-            unsigned char b = frame_buffer[pixel_idx + 2];
+        if (config->color_format == COLOR_FORMAT_RGB) {
+            // Conversion from RGB to YCBCr for the entire frame
+            for(int pixel_idx = 0; pixel_idx < frame_size; pixel_idx += config->bytes_per_pixel) {
+                unsigned char r = frame_buffer[pixel_idx];
+                unsigned char g = frame_buffer[pixel_idx + 1];
+                unsigned char b = frame_buffer[pixel_idx + 2];
 
-            YCbCrPixel ycbcr_pixel;
-            rgb_to_ycbcr(r, g, b, &ycbcr_pixel);
+                YCbCrPixel ycbcr_pixel;
+                rgb_to_ycbcr(r, g, b, &ycbcr_pixel);
 
-            // replace rgb with YcbCr color values
-            frame_buffer[pixel_idx] = ycbcr_pixel.Y;
-            frame_buffer[pixel_idx + 1] = ycbcr_pixel.Cb;
-            frame_buffer[pixel_idx + 2] = ycbcr_pixel.Cr;
+                // replace rgb with YcbCr color values
+                frame_buffer[pixel_idx] = ycbcr_pixel.Y;
+                frame_buffer[pixel_idx + 1] = ycbcr_pixel.Cb;
+                frame_buffer[pixel_idx + 2] = ycbcr_pixel.Cr;
+            }
         }
-
+        
         // Modify each pixel data in place, based on given quantization level
         apply_complex_quantization(frame_buffer, frame_size, quantization_level);
 
