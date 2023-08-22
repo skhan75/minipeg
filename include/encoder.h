@@ -6,12 +6,19 @@
 // Default BLOCK_SIZE
 #define DEFAULT_BLOCK_SIZE 8
 
+// For input video color format
+typedef enum {
+    COLOR_FORMAT_RGB,
+    COLOR_FORMAT_YCBCR
+} ColorFormat;
+
 // Define video configuration structure
 typedef struct {
     int width;
     int height;
     int bytes_per_pixel; // e.g., 3 for RGB, 4 for RGBA
     int frame_count;
+    ColorFormat color_format;
 } RawVideoConfig;
 
 // Define RLE structure
@@ -37,6 +44,12 @@ typedef struct {
  * @param quantization_level The level of quantization to apply (0 to 3).
  * @return Pointer to RLE encoded data. Caller is responsible for freeing this memory using free().
  */
-EncodedVideoData *encode_video(unsigned char *raw_buffer, int buffer_size, RawVideoConfig *config, int quantization_level, int block_size);
+EncodedVideoData *encode_video(
+    unsigned char *raw_buffer,
+    int buffer_size,
+    RawVideoConfig *config,
+    int quantization_level,
+    int block_size
+);
 
 #endif // ENCODER_H
