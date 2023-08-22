@@ -1,5 +1,6 @@
 #include "encoder.h"
 #include "dct.h"
+#include "color_conversion.h"
 #include <string.h>
 
 #define QUANTIZATION_LEVELS 4
@@ -101,10 +102,25 @@ EncodedVideoData *encode_video(
     int total_encoded_size = 0;
 
     // Iterate Over Each Frame for Encoding
-    for(int i = 0; i < total_frames; i++) {
+    for (int frame = 0; frame < total_frames; frame++) {
         // gets a pointer to the start of the current frame we're processing. 
-        size_t frame_offset = (size_t)i * frame_size;
+        size_t frame_offset = (size_t)frame * frame_size;
         unsigned char *frame_buffer = raw_buffer + frame_offset;
+
+        // Conversion from RGB to YCBCr for the entire frame
+        for(int pixel_idx = 0; pixel_idx < frame_size; pixel_idx += config->bytes_per_pixel) {
+            unsigned char r = frame_buffer[pixel_idx];
+            unsigned char g = frame_buffer[pixel_idx + 1];
+            unsigned char b = frame_buffer[pixel_idx + 2];
+
+            YCbCrPixel ycbcr_pixel;
+            rgb_to_ycbcr(r, g, b, &ycbcr_pixel);
+
+            // replace rgb with YcbCr color values
+            frame_buffer[pixel_idx] = ycbcr_pixel.Y;
+            frame_buffer[pixel_idx + 1] = ycbcr_pixel.Cb;
+            frame_buffer[pixel_idx + 2] = ycbcr_pixel.Cr;
+        }
 
         // Modify each pixel data in place, based on given quantization level
         apply_complex_quantization(frame_buffer, frame_size, quantization_level);
@@ -121,7 +137,6 @@ EncodedVideoData *encode_video(
 
             // Perform DCT on the block
             perform_dct(dct_ctx, frame_block, dct_output);
-
             // Quantize the DCT coefficients
             quantize_dct_coefficients(dct_output, LUMINANCE_QUANTIZATION_TABLE, block_size);
 
@@ -150,7 +165,7 @@ EncodedVideoData *encode_video(
         }
     }
 
-    // Cleanup the DCT context
+    // Cleanup
     free_dct(dct_ctx);
 
     EncodedVideoData* encoded_data = (EncodedVideoData*) malloc(sizeof(EncodedVideoData));
