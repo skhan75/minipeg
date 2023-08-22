@@ -8,6 +8,18 @@
 static int quantization_tables[QUANTIZATION_LEVELS][256];
 static int is_initialized = 0; // Global flag to check if tables are initialized
 
+// Standard JPEG Quantization Table for Luminance
+// Luminance table for grayscale or Y channel in YCbCr
+static int LUMINANCE_QUANTIZATION_TABLE[8][8] = {
+    {16, 11, 10, 16, 24, 40, 51, 61},
+    {12, 12, 14, 19, 26, 58, 60, 55},
+    {14, 13, 16, 24, 40, 57, 69, 56},
+    {14, 17, 22, 29, 51, 87, 80, 62},
+    {18, 22, 37, 56, 68, 109, 103, 77},
+    {24, 35, 55, 64, 81, 104, 113, 92},
+    {49, 64, 78, 87, 103, 121, 120, 101},
+    {72, 92, 95, 98, 112, 100, 103, 99}};
+
 // Initialize the quantization tables
 static void initialize_quantization_tables() {
     if (!is_initialized) {
@@ -78,7 +90,7 @@ EncodedVideoData *encode_video(
     int total_frames = buffer_size / frame_size;
 
     // Assuming we're working with grayscale data for simplicity.
-    // For RGB, you'd need to handle each channel separately.
+    // For RGB, you'd need to handle each channel separately. TODO - update later.
     unsigned char frame_block[block_size][block_size];
     double dct_output[block_size][block_size];
 
@@ -110,9 +122,8 @@ EncodedVideoData *encode_video(
             // Perform DCT on the block
             perform_dct(dct_ctx, frame_block, dct_output);
 
-            // Quantize the DCT coefficients (using a predefined quantization table)
-            int quantization_table[block_size][block_size]; // This needs to be defined, typically it's standard for JPEG compression
-            quantize_dct_coefficients(dct_output, quantization_table, block_size);
+            // Quantize the DCT coefficients
+            quantize_dct_coefficients(dct_output, LUMINANCE_QUANTIZATION_TABLE, block_size);
 
             // Flatten the 2D quantized DCT block to a 1D array
             // The flattening of a 2D block to a 1D array isn't strictly necessary for
@@ -154,3 +165,9 @@ EncodedVideoData *encode_video(
 
     return encoded_data;
 }
+
+// TODO - JPEG typically operates in the YCbCr color space where luminance (Y) and chrominance (Cb, Cr)
+// are separated. If your video encoding is using a different color space, like RGB, the effect of the
+// quantization table might not be optimal. In such a scenario, you might need to adjust the table or 
+// switch to a color space like YCbCr.
+// --> verify color space
