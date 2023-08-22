@@ -1,46 +1,46 @@
-# Minipeg
-## Mini video processing library like ffmpeg
+# MiniPeg Video Codec
 
-### Video Encoder
-- Goal is to represent same visual information using fewer bits.
-- Rudimentary Video Encoding Ideas:
-    - Frame Difference
-        - Only store the difference between consecutive frames instead of full frames. For static scenes, the difference would be minimal, resulting in considerable data savings.
-    - Quantization
-        - Reduce the precision of pixel values. For example, if a pixel's RGB value ranges from 0-255, reduce its precision by only allowing multiples of 4 or 8, leading to data compression but reduced quality.
-    - Simple Run Length Encoding (RLE)
-        - If there are consecutive pixels of the same color, store the color once followed by a count.
-- `encoder.c`
-    - **Step-1: Quantization (using multiples of 4 for simplicity)**
-        - Quantization, in general, is the process of constraining or reducing the number of possible values in a dataset, typically to compress the data.
-        - In the context of our rudimentary video encoder, the quantization process aims to simplify the color values to make them more amenable to compression.
-        
-        ```jsx
-        for (int i = 0; i < buffer_size; i++) {
-            raw_buffer[i] = (raw_buffer[i] / 4) * 4;
-        }
-        ```
-        
-        - Here's what's happening in this loop:
-            1. We iterate over each byte in the **`raw_buffer`**.
-            2. For each byte (representing a color value ranging from 0 to 255), we divide it by 4 and then multiply the result by 4.
-        - What does this achieve?
-            - The division by 4 followed by multiplication is a way of rounding down the value to the nearest multiple of 4. This effectively reduces the precision of color values.
-            - For a concrete example, consider a single byte value of 157:
-                - Dividing by 4 gives 157/4 =39.25
-                - When we convert this to an integer (in C, integer division automatically floors the result), we get 39.
-                - Multiplying by 4 gives 39×4=156.
-                
-                Thus, a value of 157 gets "quantized" to 156. Similarly:
-                
-                - 158, 159, and 160 would all get quantized to 156.
-                - 161, 162, 163, and 164 would get quantized to 160.
-                
-                And so on.
-                
-        - Why is this useful?
-            - By reducing the number of unique values (in this case, mapping every group of 4 values to a single representative value), we're simplifying the data. This simplification can make subsequent compression steps, like Run-Length Encoding (RLE), more effective because we're more likely to have longer runs of identical values.
-            - However, it's important to understand that this type of quantization introduces a loss of information. The process is irreversible; once you've quantized the data, you can't get back the original values. In real-world video encoding, quantization is used in more sophisticated ways and is one of the steps that can lead to a loss of visual quality, especially if done aggressively.
+## Overview
+
+MiniPeg is a minimalistic video codec designed to showcase basic principles of video compression using discrete cosine transform (DCT) and run-length encoding (RLE). It provides a simple mechanism to perform video encoding and decoding on raw video frames.
+
+## Key Features
+
+1. **Color Space Conversion**: 
+    - The codec supports videos in both RGB and YCbCr color spaces. Videos in RGB format are converted to YCbCr, leveraging the benefits of separating luminance and chrominance components.
     
-    - **Step-2: Simple Run-Length Encoding**
-        - Run-Length Encoding (RLE) is a compression technique primarily suited for data with long sequences of repeated values. It's widely used in graphic file formats like BMP and TIFF due to its simplicity.
+2. **Quantization**: 
+    - Uses quantization tables, including the standard JPEG luminance table, to compress DCT coefficients. Different quantization levels can be set to adjust the quality vs compression ratio trade-off. The decoding process includes dequantization to restore pixel values.
+    
+3. **DCT Transformation**: 
+    - Implements Discrete Cosine Transform to convert video data into the frequency domain. This transformation facilitates better compression of the video data by focusing on the most significant frequency components.
+    
+4. **RLE (Run-Length Encoding)**: 
+    - RLE is applied to further compress sequences of repeated values. For decoding, the RLE encoded data is expanded back to its original form.
+    
+5. **Modular Design**:
+    - The project is structured into separate modules (`encoder`, `decoder`, `dct`, `color_conversion`) to ensure clarity and ease of maintenance.
+
+## Usage
+
+### Encoding
+
+1. Convert raw video data into the desired format using the `encode_video` function. Pass the video data, configuration, quantization level, and block size (for DCT).
+   
+2. If the video is in RGB format, it will be automatically converted to YCbCr color space for optimal encoding.
+
+### Decoding
+
+1. Use the `decode_video` function by passing the encoded data and configuration.
+   
+2. The function will expand the RLE data, apply dequantization, and return the original video buffer.
+
+## Future Improvements
+
+- Incorporation of more advanced entropy encoding techniques, such as Huffman coding.
+- Handling of edge cases where the video buffer size isn't a multiple of the frame size.
+- Enhanced error handling and input validation for robustness.
+
+## Conclusion
+
+MiniPeg offers a basic yet illustrative demonstration of fundamental video encoding and decoding techniques. It serves as a springboard for those eager to delve into the world of video codecs, providing hands-on experience and a foundation for more advanced explorations.
